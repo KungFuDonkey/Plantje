@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 
-#define ONBOARD_LED 16
-#define ESP8266_LED 2
+#define ONBOARD_LED 16    // LED on the side of the processor
+#define ESP8266_LED 2     // LED on the side of the wifi unit
 
 // ADC_MODE(ADC_VCC); will result in compile error. use this instead.
 int __get_adc_mode(void) { return (int) (ADC_VCC); }
