@@ -1,10 +1,9 @@
 #include <ESP8266WiFi.h>
+#include <Servo.h>
 
 #define ONBOARD_LED 16
 #define ESP8266_LED 2
-
-// ADC_MODE(ADC_VCC); will result in compile error. use this instead.
-int __get_adc_mode(void) { return (int) (ADC_VCC); }
+#define MOISTURE_LED A0
 
 void setup() 
 {
@@ -22,12 +21,6 @@ void setup()
 
 void loop() 
 {
-  digitalWrite(ONBOARD_LED, HIGH);
-  digitalWrite(ESP8266_LED, HIGH);
-  Serial.println("LED on");
-  delay(500);
-  digitalWrite(ONBOARD_LED, LOW);
-  digitalWrite(ESP8266_LED, LOW);
-  Serial.println("LED off");
+  Serial.println(analogRead(MOISTURE_LED));
   delay(500);
 }
