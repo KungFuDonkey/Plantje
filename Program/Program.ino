@@ -21,8 +21,6 @@
 #include <Wire.h>
 #include <Adafruit_BME280.h>
 #include <Adafruit_SSD1306.h>
-#include "SSD1306Wire.h"
-#include "OLEDDisplayUi.h"
 #include "WifiCredentials.h"
 #include "PubSubClient.h"
 #include "EventQueue.h"
