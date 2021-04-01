@@ -123,7 +123,7 @@ void setup()
     while (1);
   }
   display.display();
-  queue.Enqueue(display.clearDisplay(), 2000);
+  queue.Enqueue(clearDisplay, 2000);
 
   setup_wifi();
 
@@ -219,6 +219,11 @@ void callback(char* topic, byte* payload, unsigned int length){
     ButtonAction(String(msg));
   }
   delete(msg);
+}
+
+void clearDisplay(){
+  display.clearDisplay();
+  queue.Enqueue(clearDisplay,2000);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
