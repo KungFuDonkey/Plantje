@@ -37,10 +37,11 @@
 #define D8 15
 
 
-#define SERVO_PIN D0
+#define SERVO_PIN D5
 #define ONBOARD_LED 16    // LED on the side of the processor
 #define ESP8266_LED 2     // LED on the side of the wifi unit
-#define MOISTURE_LED A0
+#define AMUX_PIN A0
+#define AMUX_SELECT D3
 
 //publish topics
 #define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature"
@@ -61,9 +62,9 @@ char msg[MSG_BUFFER_SIZE];
 
 //Servo
 Servo servo;
-
-//BME280
-Adafruit_BME280 bme;
+int lastServoTime = 0;
+int servoDelay = 3000;
+bool servoUp = false;
 
 //Real OLED display
 #define OLED_RESET     -1
@@ -72,6 +73,9 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 //Queue
 EventQueue queue;
+
+//BME280
+Adafruit_BME280 bme;
 
 //Temperature sensor
 float temp = 0;
@@ -98,8 +102,8 @@ void setup()
 {
   pinMode(ONBOARD_LED, OUTPUT);
   pinMode(ESP8266_LED, OUTPUT);
-  pinMode(D3, OUTPUT);
-  pinMode(A0, INPUT);
+  pinMode(AMUX_SELECT, OUTPUT);
+  pinMode(AMUX_PIN, INPUT);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -157,6 +161,7 @@ void loop()
   
   queue.PerformEvents();
   TestI2C();
+  TestServo();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -236,14 +241,14 @@ void MQTT_publishTemp(){
 
 void UpdateMoisture(){
   moistureRead = true;
-  digitalWrite(D3, HIGH);
+  digitalWrite(AMUX_SELECT, HIGH);
   queue.Enqueue(ReadMoisture, 100);
   queue.Enqueue(UpdateMoisture, 5000);
 }
 
 void ReadMoisture(){
-  moisture = analogRead(A0);
-  digitalWrite(D3, LOW);
+  moisture = analogRead(AMUX_PIN);
+  digitalWrite(AMUX_SELECT, LOW);
   MQTT_publishMoisture();
   moistureRead = false;
 }
@@ -262,8 +267,8 @@ void MQTT_publishMoisture(){
 void UpdateLight(){
   if (!moistureRead)
   {
-    digitalWrite(D3, LOW);
-    light = analogRead(A0);
+    digitalWrite(AMUX_SELECT, LOW);
+    light = analogRead(AMUX_PIN);
     MQTT_publishLight();
     queue.Enqueue(UpdateLight, 2000);
     return;
@@ -329,4 +334,20 @@ void TestI2C(){
   display.print("Light: ");
   display.println(light);
   display.display();
+}
+
+void TestServo(){
+  if (millis() - lastServoTime > servoDelay)
+  {
+    lastServoTime = millis();
+    if (servoUp)
+    {
+      servo.write(180);
+    }
+    else
+    {
+      servo.write(0);
+    }
+    servoUp = !servoUp;
+  }
 }
