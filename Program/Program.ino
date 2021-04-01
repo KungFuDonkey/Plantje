@@ -5,6 +5,8 @@
 #ifdef DEBUG
 #define LOG(x) Serial.print(x)
 #define LOGLN(x) Serial.println(x)
+#define LOGF(x) Serial.println(F(x))
+#define LOGLNF(x) Serial.println(F(x))
 #define BEGINLOGGING Serial.begin(115200)
 #define WAITONLOGGER while(!Serial)
 #else
@@ -16,7 +18,11 @@
 
 #include <ESP8266WiFi.h>
 #include <Servo.h>
-#include <Wire.h> 
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include "SSD1306Wire.h"
 #include "OLEDDisplayUi.h"
 #include "WifiCredentials.h"
@@ -60,9 +66,17 @@ char msg[MSG_BUFFER_SIZE];
 //Servo
 Servo servo;
 
+//BME280
+Adafruit_BME280 bme;
+
 //Oled display
-SSD1306Wire display(0x3c, D3, D5);
-OLEDDisplayUi ui ( &display );
+//SSD1306Wire display(0x3c, D3, D5);
+//OLEDDisplayUi ui ( &display );
+
+//Real OLED display
+#define OLED_RESET     -1
+#define SCREEN_ADDRESS 0x3c
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 //Queue
 EventQueue queue;
@@ -94,6 +108,22 @@ void setup()
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
+  
+  // Setup BME
+  if (!bme.begin(0x76))
+  {
+    LOGLNF("Could not find a valid BME280 sensor");
+    while (1);
+  }
+
+  // Setup display
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
+  {
+    LOGLNF("SSD1306 allocation failed");
+    while (1);
+  }
+  display.display();
+  queue.Enqueue(display.clearDisplay(), 2000);
 
   setup_wifi();
 
@@ -101,15 +131,16 @@ void setup()
   client.setCallback(callback);
 
   // Print VCC voltage
-  LOG("Current VCC: ");
+  /*LOG("Current VCC: ");
   LOGLN(ESP.getVcc());
   display.init();
 
   display.flipScreenVertically();
-  display.setFont(ArialMT_Plain_10);
+  display.setFont(ArialMT_Plain_10);*/
 
   temp = 20;
-  queue.Enqueue(UpdateTemp,10000);
+  queue.Enqueue(UpdateTemp, 10000);
+
 }
 
 void setup_wifi(){
@@ -141,6 +172,7 @@ void loop()
   // write the buffer to the display
   display.display();
   */
+  TestI2C();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -202,9 +234,7 @@ void ButtonAction(String msg){
 // Temperature Sensor
 
 void UpdateTemp(){
-  // Read temp here
-
-  temp = 1;
+  temp = bme.readTemperature();
   MQTT_publishTemp();
   queue.Enqueue(UpdateTemp,10000);
 }
@@ -257,8 +287,7 @@ void MQTT_publishLight(){
 // Humidity Sensor
 
 void UpdateHumidity(){
-  // Read humidity here
-  humidity = 1;
+  humidity = bme.readHumidity();
   MQTT_publishHumidity();
   queue.Enqueue(UpdateHumidity,10000);
 }
@@ -275,8 +304,7 @@ void MQTT_publishHumidity(){
 // Airpressure Sensor
 
 void UpdatePressure(){
-  // Read pressure here
-  pressure = 1;
+  pressure = bme.readPressure();
   MQTT_publishPressure();
   queue.Enqueue(UpdatePressure,10000);
 }
@@ -287,4 +315,15 @@ void MQTT_publishPressure(){
     LOGLN(pressure);
     prevpressure = pressure;
   }
+}
+
+void TestI2C(){
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0,0);
+  display.print("Current temperature: ");
+  display.println(temp);
+  display.print("Current humidity: ");
+  display.println(humidity);
+  display.display();
 }
