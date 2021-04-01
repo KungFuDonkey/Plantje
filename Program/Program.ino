@@ -1,6 +1,8 @@
 // DEBUG or RELEASE for logging
 #define DEBUG
 
+#define ARDUINO 10813
+
 #define numToCharArray(x) String(x).c_str()
 #ifdef DEBUG
 #define LOG(x) Serial.print(x)
@@ -19,9 +21,7 @@
 #include <ESP8266WiFi.h>
 #include <Servo.h>
 #include <Wire.h>
-#include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
-#include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "SSD1306Wire.h"
 #include "OLEDDisplayUi.h"
