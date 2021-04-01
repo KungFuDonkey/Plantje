@@ -36,8 +36,8 @@
 
 
 #define SERVO_PIN D0
-#define ONBOARD_LED 16
-#define ESP8266_LED 2
+#define ONBOARD_LED 16    // LED on the side of the processor
+#define ESP8266_LED 2     // LED on the side of the wifi unit
 #define MOISTURE_LED A0
 
 //publish topics
