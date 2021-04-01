@@ -65,10 +65,6 @@ Servo servo;
 //BME280
 Adafruit_BME280 bme;
 
-//Oled display
-//SSD1306Wire display(0x3c, D3, D5);
-//OLEDDisplayUi ui ( &display );
-
 //Real OLED display
 #define OLED_RESET     -1
 #define SCREEN_ADDRESS 0x3c
@@ -88,6 +84,7 @@ float prevlight = 0;
 //Moisture sensor
 float moisture = 0;
 float prevmoisture = 0;
+bool moistureRead = false;
 
 //Humidity sensor
 float humidity = 0;
@@ -101,6 +98,8 @@ void setup()
 {
   pinMode(ONBOARD_LED, OUTPUT);
   pinMode(ESP8266_LED, OUTPUT);
+  pinMode(D3, OUTPUT);
+  pinMode(A0, INPUT);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -119,24 +118,21 @@ void setup()
     while (1);
   }
   display.display();
-  queue.Enqueue(clearDisplay, 2000);
 
   setup_wifi();
 
   client.setServer(SERVER,SERVERPORT);
   client.setCallback(callback);
 
-  // Print VCC voltage
-  /*LOG("Current VCC: ");
-  LOGLN(ESP.getVcc());
-  display.init();
+  EnqueueSensors();
+}
 
-  display.flipScreenVertically();
-  display.setFont(ArialMT_Plain_10);*/
-
-  temp = 20;
-  queue.Enqueue(UpdateTemp, 10000);
-
+void EnqueueSensors(){
+  queue.Enqueue(UpdateTemp, 1000);
+  queue.Enqueue(UpdateHumidity, 1000);
+  queue.Enqueue(UpdateLight, 1000);
+  queue.Enqueue(UpdateMoisture, 1000);
+  queue.Enqueue(UpdatePressure, 1000);
 }
 
 void setup_wifi(){
@@ -160,14 +156,6 @@ void loop()
   MQTT_checkConnection();
   
   queue.PerformEvents();
-  /*
-  display.clear();
-
-  display.setTextAlignment(TEXT_ALIGN_RIGHT);
-  display.drawString(10, 128, String(millis()));
-  // write the buffer to the display
-  display.display();
-  */
   TestI2C();
 }
 
@@ -217,11 +205,6 @@ void callback(char* topic, byte* payload, unsigned int length){
   delete(msg);
 }
 
-void clearDisplay(){
-  display.clearDisplay();
-  queue.Enqueue(clearDisplay,2000);
-}
-
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Online Button
 
@@ -237,7 +220,7 @@ void ButtonAction(String msg){
 void UpdateTemp(){
   temp = bme.readTemperature();
   MQTT_publishTemp();
-  queue.Enqueue(UpdateTemp,10000);
+  queue.Enqueue(UpdateTemp, 5000);
 }
 
 void MQTT_publishTemp(){
@@ -252,10 +235,17 @@ void MQTT_publishTemp(){
 // Moisture Sensor
 
 void UpdateMoisture(){
-  // Read moisture here
-  moisture = 1;
+  moistureRead = true;
+  digitalWrite(D3, HIGH);
+  queue.Enqueue(ReadMoisture, 100);
+  queue.Enqueue(UpdateMoisture, 5000);
+}
+
+void ReadMoisture(){
+  moisture = analogRead(A0);
+  digitalWrite(D3, LOW);
   MQTT_publishMoisture();
-  queue.Enqueue(UpdateMoisture,10000);
+  moistureRead = false;
 }
 
 void MQTT_publishMoisture(){
@@ -270,10 +260,15 @@ void MQTT_publishMoisture(){
 // Light Sensor
 
 void UpdateLight(){
-  // Read light here
-  light = 1;
-  MQTT_publishLight();
-  queue.Enqueue(UpdateLight,10000);
+  if (!moistureRead)
+  {
+    digitalWrite(D3, LOW);
+    light = analogRead(A0);
+    MQTT_publishLight();
+    queue.Enqueue(UpdateLight, 2000);
+    return;
+  }
+  queue.Enqueue(UpdateLight, 100);
 }
 
 void MQTT_publishLight(){
@@ -290,7 +285,7 @@ void MQTT_publishLight(){
 void UpdateHumidity(){
   humidity = bme.readHumidity();
   MQTT_publishHumidity();
-  queue.Enqueue(UpdateHumidity,10000);
+  queue.Enqueue(UpdateHumidity, 5000);
 }
 
 void MQTT_publishHumidity(){
@@ -307,7 +302,7 @@ void MQTT_publishHumidity(){
 void UpdatePressure(){
   pressure = bme.readPressure();
   MQTT_publishPressure();
-  queue.Enqueue(UpdatePressure,10000);
+  queue.Enqueue(UpdatePressure, 5000);
 }
 
 void MQTT_publishPressure(){
@@ -319,12 +314,19 @@ void MQTT_publishPressure(){
 }
 
 void TestI2C(){
+  display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0,0);
-  display.print("Current temperature: ");
+  display.print("Temperature: ");
   display.println(temp);
-  display.print("Current humidity: ");
+  display.print("Humidity: ");
   display.println(humidity);
+  display.print("Pressure: ");
+  display.println(pressure);
+  display.print("Moisture: ");
+  display.println(moisture);
+  display.print("Light: ");
+  display.println(light);
   display.display();
 }
