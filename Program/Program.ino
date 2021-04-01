@@ -7,8 +7,6 @@
 #ifdef DEBUG
 #define LOG(x) Serial.print(x)
 #define LOGLN(x) Serial.println(x)
-#define LOGF(x) Serial.println(F(x))
-#define LOGLNF(x) Serial.println(F(x))
 #define BEGINLOGGING Serial.begin(115200)
 #define WAITONLOGGER while(!Serial)
 #else
@@ -112,14 +110,14 @@ void setup()
   // Setup BME
   if (!bme.begin(0x76))
   {
-    LOGLNF("Could not find a valid BME280 sensor");
+    LOGLN("Could not find a valid BME280 sensor");
     while (1);
   }
 
   // Setup display
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS))
   {
-    LOGLNF("SSD1306 allocation failed");
+    LOGLN("SSD1306 allocation failed");
     while (1);
   }
   display.display();
