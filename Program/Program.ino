@@ -99,12 +99,31 @@ float prevhumidity = 0;
 float pressure = 0;
 float prevpressure = 0;
 
+//Watering the plant
+#define WaterTime 3000
+#define CancelWaterTime 10000
+unsigned long lastWateredTime = 0;
+
+//Mode
+bool manual = false;
+
+//Menus
+int menu = 0;
+#define menuAmount 1
+#define AutoMenuSwitchTimer 5000
+
+//Flash button
+int prevButton = 0;
+int button = 0;
+
 void setup() 
 {
   pinMode(ONBOARD_LED, OUTPUT);
   pinMode(ESP8266_LED, OUTPUT);
   pinMode(AMUX_SELECT, OUTPUT);
   pinMode(AMUX_PIN, INPUT);
+  pinMode(D0,OUTPUT);
+  pinMode(0,INPUT_PULLUP);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -129,7 +148,9 @@ void setup()
   client.setServer(SERVER,SERVERPORT);
   client.setCallback(callback);
 
+  servo.write(135);
   EnqueueSensors();
+  queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
 }
 
 void EnqueueSensors(){
@@ -161,8 +182,13 @@ void loop()
   MQTT_checkConnection();
   
   queue.PerformEvents();
-  TestI2C();
-  TestServo();
+  Menu(0);
+
+  button = digitalRead(0);
+  if(button != prevButton){
+    SwitchMode();
+  }
+  prevButton = button;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -218,7 +244,34 @@ void callback(char* topic, byte* payload, unsigned int length){
 // Gestures
 
 void GestureAction(String msg){
+  if(msg == "toggle"){
+    SwitchMode();
+  }
+  else if(manual && msg == "updateValues"){
+    ReloadVariables();
+  }
+  else if(manual && msg == "nextMenu"){
+    MenuUp();
+  }
+  else if(manual && msg == "water plant"){
+    WaterPlant();
+  }
+}
 
+void SwitchMode(){
+  manual = !manual;
+  digitalWrite(D0,!manual);
+}
+
+void ReloadVariables(){
+  temp = bme.readTemperature();
+  pressure = bme.readPressure();
+  humidity = bme.readHumidity();
+  digitalWrite(AMUX_SELECT, LOW);
+  light = analogRead(AMUX_PIN);
+  digitalWrite(AMUX_SELECT, HIGH);
+  queue.Enqueue(ReadMoisture, 100);
+  queue.Enqueue(ShowVariables, 101);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -329,7 +382,24 @@ void MQTT_publishPressure(){
   }
 }
 
-void TestI2C(){
+void AutoMenuUp(){
+  if(!manual){
+    MenuUp();
+  }
+  queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
+}
+
+void MenuUp(){
+  menu = menu + 1 == menuAmount ? 0 : menu + 1;
+}
+
+void Menu(int menu){
+  if(menu == 0){
+    ShowVariables();
+  }
+}
+
+void ShowVariables(){
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
@@ -347,18 +417,12 @@ void TestI2C(){
   display.display();
 }
 
-void TestServo(){
-  if (millis() - lastServoTime > servoDelay)
-  {
-    lastServoTime = millis();
-    if (servoUp)
-    {
-      servo.write(180);
-    }
-    else
-    {
-      servo.write(0);
-    }
-    servoUp = !servoUp;
+void WaterPlant(){
+  if(millis() - lastWateredTime > CancelWaterTime){
+    servo.write(45);
+    queue.Enqueue(StopWateringPlant,3000);
   }
+}
+void StopWateringPlant(){
+  servo.write(135);
 }
