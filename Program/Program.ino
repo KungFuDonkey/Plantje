@@ -50,6 +50,7 @@
 #define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure"
 #define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity"
 #define LIGHTTOPIC GENERALTOPIC "home/bedroom/light"
+#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice"
 
 //subscribe topics
 #define BUTTONTOPIC GENERALTOPIC "home/bedroom/button"
@@ -207,7 +208,17 @@ void callback(char* topic, byte* payload, unsigned int length){
   if(check.equals(BUTTONTOPIC)){
     ButtonAction(String(msg));
   }
+  if(check.equals(GESTURETOPIC)){
+    GestureAction(String(msg));
+  }
   delete(msg);
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Gestures
+
+void GestureAction(String msg){
+
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
