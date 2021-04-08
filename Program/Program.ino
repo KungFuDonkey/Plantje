@@ -224,20 +224,19 @@ void callback(char* topic, byte* payload, unsigned int length){
   LOG("Message arrived [");
   LOG(topic);
   LOG("] ");
-  char* msg = new char[length];
+  String msg;
   for(int i = 0; i < length; i++){
     LOG((char)payload[i]);
-    msg[i] = (char)payload[i];
+    msg += (char)payload[i];
   }
   LOGLN();
   String check = String(topic);
   if(check.equals(BUTTONTOPIC)){
-    ButtonAction(String(msg));
+    ButtonAction(msg);
   }
   if(check.equals(GESTURETOPIC)){
-    GestureAction(String(msg));
+    GestureAction(msg);
   }
-  delete(msg);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
