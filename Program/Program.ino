@@ -24,6 +24,7 @@
 #include "WifiCredentials.h"
 #include "PubSubClient.h"
 #include "EventQueue.h"
+#include "Encrypting.h"
 
 
 #define D0 16
@@ -44,13 +45,13 @@
 #define AMUX_SELECT D3
 
 //publish topics
-#define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature"
-#define WILLTOPIC GENERALTOPIC "home/bedroom/espConnected"
-#define MOISTURETOPIC GENERALTOPIC "home/bedroom/moisture"
-#define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure"
-#define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity"
-#define LIGHTTOPIC GENERALTOPIC "home/bedroom/light"
-#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice"
+#define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature\0"
+#define WILLTOPIC GENERALTOPIC "home/bedroom/espConnected\0"
+#define MOISTURETOPIC GENERALTOPIC "home/bedroom/moisture\0"
+#define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure\0"
+#define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity\0"
+#define LIGHTTOPIC GENERALTOPIC "home/bedroom/light\0"
+#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice\0"
 
 //subscribe topics
 #define BUTTONTOPIC GENERALTOPIC "home/bedroom/button"
@@ -116,6 +117,9 @@ int plantStatus = 0; // 0 = sad; 1 = normal; 2 = happy
 //Flash button
 int prevButton = LOW;
 int button = LOW;
+
+//Encyptor
+Encryptor encryptor;
 
 void setup() 
 {
@@ -225,12 +229,15 @@ void callback(char* topic, byte* payload, unsigned int length){
   LOG("Message arrived [");
   LOG(topic);
   LOG("] ");
-  String msg;
+  char* msg = new char[length + 1];
   for(int i = 0; i < length; i++){
     LOG((char)payload[i]);
-    msg += (char)payload[i];
+    msg[i] = (char)payload[i];
   }
+  msg[length] = '\0';
   LOGLN();
+  char* message = encryptor.Decrypt(msg,topic,String(topic).length());
+  LOGLN(message);
   String check = String(topic);
   if(check.equals(BUTTONTOPIC)){
     ButtonAction(msg);
@@ -239,6 +246,15 @@ void callback(char* topic, byte* payload, unsigned int length){
     GestureAction(msg);
   }
 }
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Encryption
+
+void publishMessage(const char *topic, String payload){
+  client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()));
+}
+
+
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Gestures
