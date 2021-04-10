@@ -4,6 +4,7 @@
 #define ARDUINO 10813
 
 #define numToCharArray(x) String(x).c_str()
+#define numToString(x) String(x)
 #ifdef DEBUG
 #define LOG(x) Serial.print(x)
 #define LOGLN(x) Serial.println(x)
@@ -250,8 +251,9 @@ void callback(char* topic, byte* payload, unsigned int length){
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Encryption
 
-void publishMessage(const char *topic, String payload){
-  client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()));
+bool publishMessage(const char *topic, String payload){
+  LOGLN(encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()));
+  return client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()));
 }
 
 
@@ -310,7 +312,7 @@ void UpdateTemp(){
 }
 
 void MQTT_publishTemp(){
-  if(temp != prevtemp && client.publish(TEMPERATURETOPIC,numToCharArray(temp))){
+  if(temp != prevtemp && publishMessage(TEMPERATURETOPIC,String(temp))){
     LOG("Published Temp: ");
     LOGLN(temp);
     prevtemp = temp;
@@ -335,7 +337,7 @@ void ReadMoisture(){
 }
 
 void MQTT_publishMoisture(){
-  if(moisture != prevmoisture && client.publish(MOISTURETOPIC,numToCharArray(moisture))){
+  if(moisture != prevmoisture && publishMessage(MOISTURETOPIC,String(moisture))){
     LOG("Published Moisture: ");
     LOGLN(moisture);
     prevmoisture = moisture;
@@ -357,7 +359,7 @@ void UpdateLight(){
 }
 
 void MQTT_publishLight(){
-  if(light != prevlight && client.publish(LIGHTTOPIC,numToCharArray(light))){
+  if(light != prevlight && publishMessage(LIGHTTOPIC,String(light))){
     LOG("Published Light: ");
     LOGLN(light);
     prevlight = light;
@@ -374,7 +376,7 @@ void UpdateHumidity(){
 }
 
 void MQTT_publishHumidity(){
-  if(humidity != prevhumidity && client.publish(HUMIDITYTOPIC,numToCharArray(humidity))){
+  if(humidity != prevhumidity && publishMessage(HUMIDITYTOPIC,String(humidity))){
     LOG("Published Humidity: ");
     LOGLN(humidity);
     prevhumidity = humidity;
@@ -391,7 +393,7 @@ void UpdatePressure(){
 }
 
 void MQTT_publishPressure(){
-  if(pressure != prevpressure && client.publish(PRESSURETOPIC,numToCharArray(pressure))){
+  if(pressure != prevpressure && publishMessage(PRESSURETOPIC,String(pressure))){
     LOG("Published pressure: ");
     LOGLN(pressure);
     prevpressure = pressure;

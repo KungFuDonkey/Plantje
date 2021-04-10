@@ -8,7 +8,7 @@ public:
 
 		
 		char* encryption = TrimKey(msg, key);
-		char* topicWithKey = AppendKey(topic, key, topicSize);
+		char* topicWithKey = AppendKey(topic, GetKeyString(key), topicSize);
 		
 		
 		int topicInterpolated[16] = {
@@ -68,14 +68,14 @@ public:
 			int interpolatedAnswer = encryptionArray[i] - normalEncryptionArray[i];
 			if (interpolatedAnswer < 0)
 			{
-				interpolatedAnswer += 67;
+				interpolatedAnswer += 72;
 			}
-			if (interpolatedAnswer < 44)
+			if (interpolatedAnswer < 49)
 			{
-				decrypt[i] = (char)(interpolatedAnswer + 47);
+				decrypt[i] = (char)(interpolatedAnswer + 42);
 				continue;
 			}
-			decrypt[i] = (char)(interpolatedAnswer + 54);
+			decrypt[i] = (char)(interpolatedAnswer + 47);
 		}
 		decrypt[length] = '\0';
 		return decrypt;
@@ -84,7 +84,7 @@ public:
 	char* Encrypt(const char* msg, int size, const char* topic, int topicSize)
 	{
 		int key = random(100);
-		char* topicWithKey = AppendKey(topic, key, topicSize);
+		char* topicWithKey = AppendKey(topic, GetKeyString(key), topicSize);
 		
 		int topicInterpolated[16] = {
 			0,0,0,0,
@@ -102,15 +102,15 @@ public:
 		CreateEncryption(topicInterpolated,normalEncryption);
 
 		delete[] msgArray;
-		int* msgArray = new int[size];
+		msgArray = new int[size];
 		CreateBounds(msg, size, msgArray);
 
 		for (int i = 0; i < size; i++)
 		{
 			topicInterpolated[i] += msgArray[i];
-			if (topicInterpolated[i] > 67)
+			if (topicInterpolated[i] > 72)
 			{
-				topicInterpolated[i] -= 67;
+				topicInterpolated[i] -= 72;
 			}
 		}
 		delete[] encrypt;
@@ -128,14 +128,14 @@ private:
 
 
 	char* newArray = new char[1]{ '\0' };
-	char* AppendKey(const char* topic, int key, int topicSize) {
+	char* AppendKey(const char* topic, char* key, int topicSize) {
 		delete[] newArray;
 		newArray = new char[topicSize + 3];
 		for (int i = 0; i < topicSize; i++) {
 			newArray[i] = topic[i];
 		}
-		newArray[topicSize] = (char)(key / 10 + 48);
-		newArray[topicSize + 1] = (char)(key % 10 + 48);
+		newArray[topicSize] = key[0];
+		newArray[topicSize + 1] = key[1];
 		newArray[topicSize + 2] = '\0';
 		return newArray;
 	}
@@ -146,6 +146,20 @@ private:
 		}
 	}
 
+	char* newKey = new char[1]{ '\0' };
+	char* GetKeyString(int key) {
+		delete[] newKey;
+		newKey = new char[3]{ '0', '0', '\0' };
+		if (key < 10) {
+			newKey[1] = newKey[1] + key;
+			return newKey;
+		}
+		newKey[0] = (key / 10 + 48);
+		newKey[1] = (key % 10 + 48);
+		return newKey;
+
+	}
+
 	char* newmessage = new char[1]{ '\0' };
 	char* TrimKey(const char* msg, int& key) {
 		char keyArray[2];
@@ -153,7 +167,7 @@ private:
 		int sndInt = 0;
 		for (int i = 0; i < 17; i++)
 		{
-			if (msg[i] < 58)
+			if (msg[i] < 58 && msg[i] >= 48)
 			{
 				keyArray[0] = msg[i];
 				firstInt = i;
@@ -162,7 +176,7 @@ private:
 		}
 		for (int i = 17; i >= 0; i--)
 		{
-			if (msg[i] < 58)
+			if (msg[i] < 58 && msg[i] >= 48)
 			{
 				keyArray[1] = msg[i];
 				sndInt = i;
@@ -186,12 +200,12 @@ private:
 	{
 		for (int i = 0; i < 16; i++)
 		{
-			if (topicInterpolated[i] < 44)
+			if (topicInterpolated[i] < 49)
 			{
-				encryption[i + 1] = (char)(topicInterpolated[i] + 47);
+				encryption[i + 1] = (char)(topicInterpolated[i] + 42);
 				continue;
 			}
-			encryption[i + 1] = (char)(topicInterpolated[i] + 54);
+			encryption[i + 1] = (char)(topicInterpolated[i] + 47);
 		}
 	}
 
@@ -201,7 +215,7 @@ private:
 		char character2 = (char)(key % 10 + 48);
 		for (int i = 1; i < 16; i++)
 		{
-			if (encryption[i] < 58 || random(100) < 30)
+			if (encryption[i] < 58 || (random(100)) < 30)
 			{
 				for (int x = 17; x > i; x--)
 				{
@@ -214,7 +228,7 @@ private:
 
 		for (int i = 17; i >= 1; i--)
 		{
-			if (encryption[i] < 58 || random(100) < 30)
+			if (encryption[i] < 58 || (random(100)) < 30)
 			{
 				for (int x = 0; x < i; x++)
 				{
@@ -233,9 +247,9 @@ private:
 		for (int i = 0; i < topicSize + 2; i++)
 		{
 			topicInterpolated[i % 16] = topicInterpolated[i % 16] + topicWithKeyArray[i];
-			if (topicInterpolated[i % 16] > 67)
+			if (topicInterpolated[i % 16] > 72)
 			{
-				topicInterpolated[i % 16] -= 67;
+				topicInterpolated[i % 16] -= 72;
 			}
 		}
 		delete[] topicWithKeyArray;
@@ -249,10 +263,10 @@ private:
 		{
 			if (msg[i] < 91)
 			{
-				array[i] = msg[i] - 47;
+				array[i] = msg[i] - 42;
 				continue;
 			}
-			array[i] = msg[i] - 54;
+			array[i] = msg[i] - 47;
 		}
 	}
 
@@ -261,9 +275,9 @@ private:
 		for (int i = 14; i >= 0; i--)
 		{
 			topicInterpolated[i] += topicInterpolated[i + 1];
-			if (topicInterpolated[i] > 67)
+			if (topicInterpolated[i] > 72)
 			{
-				topicInterpolated[i % 16] -= 67;
+				topicInterpolated[i % 16] -= 72;
 			}
 		}
 	}
@@ -273,9 +287,9 @@ private:
 		for (int i = 1; i < 16; i++)
 		{
 			topicInterpolated[i] += topicInterpolated[i - 1];
-			if (topicInterpolated[i] > 67)
+			if (topicInterpolated[i] > 72)
 			{
-				topicInterpolated[i % 16] -= 67;
+				topicInterpolated[i % 16] -= 72;
 			}
 		}
 	}
