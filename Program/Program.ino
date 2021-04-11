@@ -241,10 +241,10 @@ void callback(char* topic, byte* payload, unsigned int length){
   LOGLN(message);
   String check = String(topic);
   if(check.equals(BUTTONTOPIC)){
-    ButtonAction(msg);
+    ButtonAction(message);
   }
   if(check.equals(GESTURETOPIC)){
-    GestureAction(msg);
+    GestureAction(message);
   }
 }
 
@@ -252,8 +252,7 @@ void callback(char* topic, byte* payload, unsigned int length){
 //Encryption
 
 bool publishMessage(const char *topic, String payload){
-  LOGLN(encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()));
-  return client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()));
+  return client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()),true);
 }
 
 
@@ -298,7 +297,7 @@ void ReloadVariables(){
 
 void ButtonAction(String msg){
   if(msg == "1"){
-    LOGLN("HI");
+    WaterPlant();
   }
 }
 
