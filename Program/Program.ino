@@ -157,6 +157,7 @@ void setup()
   servo.write(135);
   EnqueueSensors();
   queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
+  digitalWrite(2,LOW);
 }
 
 void EnqueueSensors(){
@@ -268,10 +269,10 @@ void GestureAction(String msg){
   else if(manual && msg == "updateValues"){
     ReloadVariables();
   }
-  else if(manual && msg == "nextMenu"){
+  else if(manual && msg == "menuUp"){
     MenuUp();
   }
-  else if(manual && msg == "water plant"){
+  else if(manual && msg == "fire"){
     WaterPlant();
   }
 }
