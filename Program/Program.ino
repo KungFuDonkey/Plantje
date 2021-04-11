@@ -128,8 +128,8 @@ void setup()
   pinMode(ESP8266_LED, OUTPUT);
   pinMode(AMUX_SELECT, OUTPUT);
   pinMode(AMUX_PIN, INPUT);
-  pinMode(D0, OUTPUT);
-  //pinMode(D0, INPUT_PULLUP);
+  pinMode(2, OUTPUT);
+  pinMode(0, INPUT_PULLUP);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -190,8 +190,8 @@ void loop()
   queue.PerformEvents();
   Menu(menu);
 
-  button = digitalRead(D0);
-  if(button != prevButton){
+  button = digitalRead(0);
+  if(button != prevButton && button == LOW){
     SwitchMode();
   }
   prevButton = button;
@@ -279,7 +279,8 @@ void GestureAction(String msg){
 void SwitchMode(){
   LOGLN("Switch mode");
   manual = !manual;
-  digitalWrite(D0,!manual);
+  LOGLN(manual);
+  digitalWrite(2,!manual);
 }
 
 void ReloadVariables(){
