@@ -217,6 +217,7 @@ void reconnect(){
       client.publish(WILLTOPIC,"CONNECTED",true);
       //subsciptions here
       client.subscribe(BUTTONTOPIC);
+      client.subscribe(GESTURETOPIC);
       break;
     } 
     LOG("failed, rc=");
