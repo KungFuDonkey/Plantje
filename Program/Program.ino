@@ -263,16 +263,16 @@ bool publishMessage(const char *topic, String payload){
 // Gestures
 
 void GestureAction(String msg){
-  if(msg == "toggle"){
+  if(msg[0] == 'a'){
     SwitchMode();
   }
-  else if(manual && msg == "updateValues"){
+  else if(manual && msg[0] == 'b'){
     ReloadVariables();
   }
-  else if(manual && msg == "menuUp"){
+  else if(manual && msg[0] == 'c'){
     MenuUp();
   }
-  else if(manual && msg == "fire"){
+  else if(manual && msg[0] == 'd'){
     WaterPlant();
   }
 }
