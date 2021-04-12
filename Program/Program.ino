@@ -47,15 +47,17 @@
 
 //publish topics
 #define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature\0"
-#define WILLTOPIC GENERALTOPIC "home/bedroom/espConnected\0"
+#define WILLTOPIC GENERALTOPIC "home/bedroom/esp/espConnected\0"
 #define MOISTURETOPIC GENERALTOPIC "home/bedroom/moisture\0"
 #define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure\0"
 #define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity\0"
 #define LIGHTTOPIC GENERALTOPIC "home/bedroom/light\0"
-#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice\0"
+#define MODETOPIC GENERALTOPIC "home/bedroom/esp/mode\0"
+
 
 //subscribe topics
-#define BUTTONTOPIC GENERALTOPIC "home/bedroom/button"
+#define BUTTONTOPIC GENERALTOPIC "home/bedroom/button\0"
+#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice\0"
 
 //Network
 WiFiClient espClient;
@@ -157,7 +159,7 @@ void setup()
   servo.write(135);
   EnqueueSensors();
   queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
-  digitalWrite(2,0);
+  PublishMode();
 }
 
 void EnqueueSensors(){
@@ -282,6 +284,16 @@ void SwitchMode(){
   manual = !manual;
   LOGLN(manual);
   digitalWrite(2,!manual);
+  PublishMode();
+}
+
+void PublishMode(){
+  if(manual){
+    publishMessage(MODETOPIC,String(manual));
+    return;
+  }
+  publishMessage(MODETOPIC,String(manual));
+  
 }
 
 void ReloadVariables(){
@@ -620,6 +632,7 @@ void WaterPlant(){
   {
     servo.write(45);
     queue.Enqueue(StopWateringPlant,3000);
+    lastWateredTime = millis();
   }
 }
 void StopWateringPlant(){
