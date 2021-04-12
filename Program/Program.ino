@@ -41,7 +41,7 @@
 #define ONBOARD_LED 16    // LED on the side of the processor
 #define ESP8266_LED 2     // LED on the side of the wifi unit
 #define AMUX_PIN A0
-#define AMUX_SELECT D3
+#define AMUX_SELECT D6
 
 //publish topics
 #define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature"
@@ -105,10 +105,10 @@ float prevpressure = 0;
 unsigned long lastWateredTime = 0;
 
 //Mode
-bool manual = false;
+bool manual = true;
 
 //Menus
-int menu = 1;
+int menu = 0;
 #define menuAmount 2
 #define AutoMenuSwitchTimer 5000
 int plantStatus = 0; // 0 = sad; 1 = normal; 2 = happy
@@ -124,7 +124,7 @@ void setup()
   pinMode(AMUX_SELECT, OUTPUT);
   pinMode(AMUX_PIN, INPUT);
   pinMode(D0, OUTPUT);
-  //pinMode(D0, INPUT_PULLUP);
+  //pinMode(0, INPUT_PULLUP);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -160,6 +160,7 @@ void EnqueueSensors(){
   queue.Enqueue(UpdateLight, 1000);
   queue.Enqueue(UpdateMoisture, 1000);
   queue.Enqueue(UpdatePressure, 1000);
+  queue.Enqueue(CheckMoisture, 3000);
 }
 
 void setup_wifi(){
@@ -187,7 +188,7 @@ void loop()
 
   button = digitalRead(D0);
   if(button != prevButton){
-    SwitchMode();
+    //SwitchMode();
   }
   prevButton = button;
 }
@@ -246,7 +247,7 @@ void callback(char* topic, byte* payload, unsigned int length){
 
 void GestureAction(String msg){
   if(msg == "toggle"){
-    SwitchMode();
+    //SwitchMode();
   }
   else if(manual && msg == "updateValues"){
     ReloadVariables();
@@ -315,6 +316,19 @@ void UpdateMoisture(){
 void ReadMoisture(){
   moisture = analogRead(AMUX_PIN);
   digitalWrite(AMUX_SELECT, LOW);
+  if (moisture < 200 && prevmoisture < 200)
+  {
+    plantStatus = 0;
+    if (!manual)
+    {
+      WaterPlant();
+    }
+  }
+  if (moisture >= 200 && prevmoisture >= 200)
+  {
+    plantStatus = 2;
+  }
+  
   MQTT_publishMoisture();
   moistureRead = false;
 }
@@ -403,11 +417,6 @@ void Menu(int menu){
   {
     ShowSmiley();
   }
-  else if (true)
-  {
-    /* code */
-  }
-  
 }
 
 void ShowVariables(){
@@ -601,6 +610,7 @@ void WaterPlant(){
   {
     servo.write(45);
     queue.Enqueue(StopWateringPlant,3000);
+    lastWateredTime = millis();
   }
 }
 void StopWateringPlant(){
