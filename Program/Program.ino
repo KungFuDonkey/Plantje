@@ -26,6 +26,7 @@
 #include "PubSubClient.h"
 #include "EventQueue.h"
 #include "Encrypting.h"
+#include "EasyButton.h"
 
 
 #define D0 16
@@ -118,8 +119,7 @@ int menu = 0;
 int plantStatus = 0; // 0 = sad; 1 = normal; 2 = happy
 
 //Flash button
-int prevButton = LOW;
-int button = LOW;
+EasyButton button(0);
 
 //Encyptor
 Encryptor encryptor;
@@ -131,7 +131,6 @@ void setup()
   pinMode(AMUX_SELECT, OUTPUT);
   pinMode(AMUX_PIN, INPUT);
   pinMode(2, OUTPUT);
-  pinMode(0, INPUT_PULLUP);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -160,6 +159,8 @@ void setup()
   EnqueueSensors();
   queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
   PublishMode();
+  button.begin();
+  button.onPressed(SwitchMode);
 }
 
 void EnqueueSensors(){
@@ -192,12 +193,7 @@ void loop()
   
   queue.PerformEvents();
   Menu(menu);
-
-  button = digitalRead(0);
-  if(button != prevButton && button == LOW){
-    SwitchMode();
-  }
-  prevButton = button;
+  button.read();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
