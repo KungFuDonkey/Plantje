@@ -326,7 +326,7 @@ void UpdateTemp(){
 }
 
 void MQTT_publishTemp(){
-  if(temp != prevtemp && publishMessage(TEMPERATURETOPIC,String(temp))){
+  if(publishMessage(TEMPERATURETOPIC,String(temp))){
     LOG("Published Temp: ");
     LOGLN(temp);
     prevtemp = temp;
@@ -364,7 +364,7 @@ void ReadMoisture(){
 }
 
 void MQTT_publishMoisture(){
-  if(moisture != prevmoisture && publishMessage(MOISTURETOPIC,String(moisture))){
+  if(publishMessage(MOISTURETOPIC,String(moisture))){
     LOG("Published Moisture: ");
     LOGLN(moisture);
     prevmoisture = moisture;
@@ -386,7 +386,7 @@ void UpdateLight(){
 }
 
 void MQTT_publishLight(){
-  if(light != prevlight && publishMessage(LIGHTTOPIC,String(light))){
+  if(publishMessage(LIGHTTOPIC,String(light))){
     LOG("Published Light: ");
     LOGLN(light);
     prevlight = light;
@@ -403,7 +403,7 @@ void UpdateHumidity(){
 }
 
 void MQTT_publishHumidity(){
-  if(humidity != prevhumidity && publishMessage(HUMIDITYTOPIC,String(humidity))){
+  if(publishMessage(HUMIDITYTOPIC,String(humidity))){
     LOG("Published Humidity: ");
     LOGLN(humidity);
     prevhumidity = humidity;
@@ -420,7 +420,7 @@ void UpdatePressure(){
 }
 
 void MQTT_publishPressure(){
-  if(pressure != prevpressure && publishMessage(PRESSURETOPIC,String(pressure))){
+  if(publishMessage(PRESSURETOPIC,String(pressure))){
     LOG("Published pressure: ");
     LOGLN(pressure);
     prevpressure = pressure;
