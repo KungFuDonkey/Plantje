@@ -131,9 +131,12 @@ private:
 	char* AppendKey(const char* topic, char* key, int topicSize) {
 		delete[] newArray;
 		newArray = new char[topicSize + 3];
-		for (int i = 0; i < topicSize; i++) {
+		for (int i = 3; i < topicSize; i++) {
 			newArray[i] = topic[i];
 		}
+    newArray[0] = '1';
+    newArray[1] = '7';
+    newArray[2] = '6';
 		newArray[topicSize] = key[0];
 		newArray[topicSize + 1] = key[1];
 		newArray[topicSize + 2] = '\0';

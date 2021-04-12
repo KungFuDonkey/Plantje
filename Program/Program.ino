@@ -43,7 +43,7 @@
 #define ONBOARD_LED 16    // LED on the side of the processor
 #define ESP8266_LED 2     // LED on the side of the wifi unit
 #define AMUX_PIN A0
-#define AMUX_SELECT D3
+#define AMUX_SELECT D6
 
 //publish topics
 #define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature\0"
@@ -157,7 +157,7 @@ void setup()
   servo.write(135);
   EnqueueSensors();
   queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
-  digitalWrite(2,LOW);
+  digitalWrite(2,0);
 }
 
 void EnqueueSensors(){
