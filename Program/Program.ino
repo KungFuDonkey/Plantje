@@ -168,7 +168,6 @@ void EnqueueSensors(){
   queue.Enqueue(UpdateLight, 1000);
   queue.Enqueue(UpdateMoisture, 1000);
   queue.Enqueue(UpdatePressure, 1000);
-  queue.Enqueue(CheckMoisture, 3000);
 }
 
 void setup_wifi(){
