@@ -4,6 +4,7 @@
 #define ARDUINO 10813
 
 #define numToCharArray(x) String(x).c_str()
+#define numToString(x) String(x)
 #ifdef DEBUG
 #define LOG(x) Serial.print(x)
 #define LOGLN(x) Serial.println(x)
@@ -24,6 +25,7 @@
 #include "WifiCredentials.h"
 #include "PubSubClient.h"
 #include "EventQueue.h"
+#include "Encrypting.h"
 
 
 #define D0 16
@@ -44,13 +46,13 @@
 #define AMUX_SELECT D6
 
 //publish topics
-#define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature"
-#define WILLTOPIC GENERALTOPIC "home/bedroom/espConnected"
-#define MOISTURETOPIC GENERALTOPIC "home/bedroom/moisture"
-#define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure"
-#define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity"
-#define LIGHTTOPIC GENERALTOPIC "home/bedroom/light"
-#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice"
+#define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature\0"
+#define WILLTOPIC GENERALTOPIC "home/bedroom/espConnected\0"
+#define MOISTURETOPIC GENERALTOPIC "home/bedroom/moisture\0"
+#define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure\0"
+#define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity\0"
+#define LIGHTTOPIC GENERALTOPIC "home/bedroom/light\0"
+#define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice\0"
 
 //subscribe topics
 #define BUTTONTOPIC GENERALTOPIC "home/bedroom/button"
@@ -117,14 +119,17 @@ int plantStatus = 0; // 0 = sad; 1 = normal; 2 = happy
 int prevButton = LOW;
 int button = LOW;
 
+//Encyptor
+Encryptor encryptor;
+
 void setup() 
 {
   pinMode(ONBOARD_LED, OUTPUT);
   pinMode(ESP8266_LED, OUTPUT);
   pinMode(AMUX_SELECT, OUTPUT);
   pinMode(AMUX_PIN, INPUT);
-  pinMode(D0, OUTPUT);
-  //pinMode(0, INPUT_PULLUP);
+  pinMode(2, OUTPUT);
+  pinMode(0, INPUT_PULLUP);
   servo.attach(SERVO_PIN);
   BEGINLOGGING;
   WAITONLOGGER;
@@ -152,6 +157,7 @@ void setup()
   servo.write(135);
   EnqueueSensors();
   queue.Enqueue(AutoMenuUp,AutoMenuSwitchTimer);
+  digitalWrite(2,0);
 }
 
 void EnqueueSensors(){
@@ -186,9 +192,9 @@ void loop()
   queue.PerformEvents();
   Menu(menu);
 
-  button = digitalRead(D0);
-  if(button != prevButton){
-    //SwitchMode();
+  button = digitalRead(0);
+  if(button != prevButton && button == LOW){
+    SwitchMode();
   }
   prevButton = button;
 }
@@ -213,6 +219,7 @@ void reconnect(){
       client.publish(WILLTOPIC,"CONNECTED",true);
       //subsciptions here
       client.subscribe(BUTTONTOPIC);
+      client.subscribe(GESTURETOPIC);
       break;
     } 
     LOG("failed, rc=");
@@ -226,44 +233,56 @@ void callback(char* topic, byte* payload, unsigned int length){
   LOG("Message arrived [");
   LOG(topic);
   LOG("] ");
-  char* msg = new char[length];
+  char* msg = new char[length + 1];
   for(int i = 0; i < length; i++){
     LOG((char)payload[i]);
     msg[i] = (char)payload[i];
   }
+  msg[length] = '\0';
   LOGLN();
+  char* message = encryptor.Decrypt(msg,topic,String(topic).length());
+  LOGLN(message);
   String check = String(topic);
   if(check.equals(BUTTONTOPIC)){
-    ButtonAction(String(msg));
+    ButtonAction(message);
   }
   if(check.equals(GESTURETOPIC)){
-    GestureAction(String(msg));
+    GestureAction(message);
   }
-  delete(msg);
 }
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Encryption
+
+bool publishMessage(const char *topic, String payload){
+  return client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()),true);
+}
+
+
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Gestures
 
 void GestureAction(String msg){
-  if(msg == "toggle"){
-    //SwitchMode();
+  if(manual && msg[0] == 'a'){
+    WaterPlant();
   }
-  else if(manual && msg == "updateValues"){
-    ReloadVariables();
+  else if(msg[0] == 'b'){
+    SwitchMode();
   }
-  else if(manual && msg == "nextMenu"){
+  else if(manual && msg[0] == 'c'){
     MenuUp();
   }
-  else if(manual && msg == "water plant"){
-    WaterPlant();
+  else if(manual && msg[0] == 'd'){
+    ReloadVariables();
   }
 }
 
 void SwitchMode(){
   LOGLN("Switch mode");
   manual = !manual;
-  digitalWrite(D0,!manual);
+  LOGLN(manual);
+  digitalWrite(2,!manual);
 }
 
 void ReloadVariables(){
@@ -282,7 +301,7 @@ void ReloadVariables(){
 
 void ButtonAction(String msg){
   if(msg == "1"){
-    LOGLN("HI");
+    WaterPlant();
   }
 }
 
@@ -296,7 +315,7 @@ void UpdateTemp(){
 }
 
 void MQTT_publishTemp(){
-  if(temp != prevtemp && client.publish(TEMPERATURETOPIC,numToCharArray(temp))){
+  if(temp != prevtemp && publishMessage(TEMPERATURETOPIC,String(temp))){
     LOG("Published Temp: ");
     LOGLN(temp);
     prevtemp = temp;
@@ -334,7 +353,7 @@ void ReadMoisture(){
 }
 
 void MQTT_publishMoisture(){
-  if(moisture != prevmoisture && client.publish(MOISTURETOPIC,numToCharArray(moisture))){
+  if(moisture != prevmoisture && publishMessage(MOISTURETOPIC,String(moisture))){
     LOG("Published Moisture: ");
     LOGLN(moisture);
     prevmoisture = moisture;
@@ -356,7 +375,7 @@ void UpdateLight(){
 }
 
 void MQTT_publishLight(){
-  if(light != prevlight && client.publish(LIGHTTOPIC,numToCharArray(light))){
+  if(light != prevlight && publishMessage(LIGHTTOPIC,String(light))){
     LOG("Published Light: ");
     LOGLN(light);
     prevlight = light;
@@ -373,7 +392,7 @@ void UpdateHumidity(){
 }
 
 void MQTT_publishHumidity(){
-  if(humidity != prevhumidity && client.publish(HUMIDITYTOPIC,numToCharArray(humidity))){
+  if(humidity != prevhumidity && publishMessage(HUMIDITYTOPIC,String(humidity))){
     LOG("Published Humidity: ");
     LOGLN(humidity);
     prevhumidity = humidity;
@@ -390,7 +409,7 @@ void UpdatePressure(){
 }
 
 void MQTT_publishPressure(){
-  if(pressure != prevpressure && client.publish(PRESSURETOPIC,numToCharArray(pressure))){
+  if(pressure != prevpressure && publishMessage(PRESSURETOPIC,String(pressure))){
     LOG("Published pressure: ");
     LOGLN(pressure);
     prevpressure = pressure;
