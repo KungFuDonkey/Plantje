@@ -637,11 +637,28 @@ void ChangePlantStatus(){
 void WaterPlant(){
   if (millis() - lastWateredTime > CancelWaterTime)
   {
-    servo.write(45);
-    queue.Enqueue(StopWateringPlant,3000);
+    StartWater();
     lastWateredTime = millis();
   }
 }
 void StopWateringPlant(){
-  servo.write(135);
+  StopWater();
+}
+
+void StartWater(){
+  int current = servo.read();
+  if(current > 45){
+    servo.write(current - 5);
+    queue.Enqueue(StartWater,200);
+    return;
+  }
+  queue.Enqueue(StopWateringPlant,3000);
+}
+
+void StopWater(){
+  int current = servo.read();
+  if(current < 135){
+    servo.write(current + 5);
+    queue.Enqueue(StopWater,200);
+  }
 }
