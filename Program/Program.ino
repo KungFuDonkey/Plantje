@@ -50,7 +50,8 @@
 //publish topics
 #define TEMPERATURETOPIC GENERALTOPIC "home/bedroom/temperature\0"
 #define WILLTOPIC GENERALTOPIC "home/bedroom/esp/espConnected\0"
-#define MOISTURETOPIC GENERALTOPIC "home/bedroom/moisture\0"
+#define MOISTURETOPIC GENERALTOPIC "home/bedroom/plant/moisture\0"
+#define LASTWATERTIMETOPIC GENERALTOPIC "home/bedroom/plant/lastwatertime\0"
 #define PRESSURETOPIC GENERALTOPIC "home/bedroom/airpressure\0"
 #define HUMIDITYTOPIC GENERALTOPIC "home/bedroom/humidity\0"
 #define LIGHTTOPIC GENERALTOPIC "home/bedroom/light\0"
@@ -111,11 +112,12 @@ float prevpressure = 0;
 unsigned long lastWateredTime = 0;
 
 //Mode
-bool manual = false;
-bool watering = false;
+bool manual = true;
+unsigned long lastActionTime = 0;
 
 //Menus
 int menu = 0;
+bool watering = false;
 #define menuAmount 4
 #define AutoMenuSwitchTimer 4000
 int plantStatus = 0; // 0 = sad; 1 = happy
@@ -196,6 +198,9 @@ void loop()
   queue.PerformEvents();
   Menu(menu);
   button.read();
+  if(manual && millis() - lastWateredTime > 60000){
+    SwitchMode();
+  }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -263,6 +268,7 @@ bool publishMessage(const char *topic, String payload){
 // Gestures
 
 void GestureAction(String msg){
+  lastActionTime = millis();
   if(manual && msg[0] == 'a'){
     WaterPlant();
   }
@@ -278,6 +284,7 @@ void GestureAction(String msg){
 }
 
 void SwitchMode(){
+  lastActionTime = millis();
   LOGLN("Switch mode");
   manual = !manual;
   LOGLN(manual);
@@ -467,7 +474,8 @@ void Menu(int menu){
   {
     ShowMoisture();
   }
-  else if (menu == 3){
+  else if (menu == 3)
+  {
     ShowLastWaterTime();
   }
   else if (menu == menuAmount)
@@ -547,6 +555,7 @@ void WaterPlant(){
   {
     StartWater();
     lastWateredTime = millis();
+    client.publish(LASTWATERTIMETOPIC,"1",false);
     watering = true;
   }
 }
@@ -559,7 +568,7 @@ void StartWater(){
   int current = servo.read();
   if(current > 45){
     servo.write(current - 5);
-    queue.Enqueue(StartWater,200);
+    queue.Enqueue(StartWater,150);
     return;
   }
   queue.Enqueue(StopWateringPlant,2000);
@@ -569,7 +578,7 @@ void StopWater(){
   int current = servo.read();
   if(current < 135){
     servo.write(current + 5);
-    queue.Enqueue(StopWater,200);
+    queue.Enqueue(StopWater,150);
     return;
   }
   watering = false;
