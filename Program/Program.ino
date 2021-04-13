@@ -437,7 +437,7 @@ void AutoMenuUp(){
 }
 
 void MenuUp(){
-  menu = menu + 1 == menuAmount ? 0 : menu + 1;
+  menu = menu + 1 >= menuAmount ? 0 : menu + 1;
 }
 
 // Used for the ShowVariables method, it won't go to this screen automatically
@@ -521,19 +521,21 @@ void ShowMoisture(){
 }
 
 void ShowLastWaterTime(){
-  display.print("Plant was watered: ");
-  unsigned long time = (millis() - lastWateredTime) / 1000;
+  display.println("Plant was watered: ");
+  unsigned long time = (millis() - lastWateredTime) / 60000;
   display.print(time);
-  display.print("s");
+  display.println(" minutes ago");
 }
 
 void ShowSmiley(){
+  int x = display.getCursorX();
+  int y = display.getCursorY();
   if (plantStatus == 0)
   {
-    display.drawBitmap(0, 10, sad_Pepe, 128, 50, WHITE);
+    display.drawBitmap(x, y, sad_Pepe, 128, 50, WHITE);
     return;
   }
-  display.drawBitmap(0, 10, happy_Pepe, 128, 50, WHITE);
+  display.drawBitmap(x, y, happy_Pepe, 128, 50, WHITE);
 }
 
 void ShowWatering(){
