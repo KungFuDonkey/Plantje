@@ -61,6 +61,7 @@
 //subscribe topics
 #define BUTTONTOPIC GENERALTOPIC "home/bedroom/button\0"
 #define GESTURETOPIC GENERALTOPIC "home/bedroom/gestureDevice\0"
+#define REALTIMETOPIC GENERALTOPIC "home/bedroom/plant/lastwatertimereal\0"
 
 //Network
 WiFiClient espClient;
@@ -112,6 +113,7 @@ bool manual = true;
 unsigned long lastActionTime = 0;
 
 //Menus
+String realTime;
 int menu = 0;
 bool watering = false;
 #define menuAmount 4
@@ -220,6 +222,7 @@ void reconnect(){
       //subsciptions here
       client.subscribe(BUTTONTOPIC);
       client.subscribe(GESTURETOPIC);
+      client.subscribe(REALTIMETOPIC);
       break;
     } 
     LOG("failed, rc=");
@@ -248,6 +251,9 @@ void callback(char* topic, byte* payload, unsigned int length){
   }
   if(check.equals(GESTURETOPIC)){
     GestureAction(message);
+  }
+  if(check.equals(REALTIMETOPIC)){
+    realTime = String(message);
   }
 }
 
@@ -323,6 +329,9 @@ void ButtonAction(String msg){
   else if (msg == "2")
   {
     ReloadVariables();
+  }
+  else if (msg == "3"){
+    MenuUp();
   }
 }
 
@@ -525,10 +534,8 @@ void ShowMoisture(){
 }
 
 void ShowLastWaterTime(){
-  display.println("Plant was watered: ");
-  unsigned long time = (millis() - lastWateredTime) / 60000;
-  display.print(time);
-  display.println(" minutes ago");
+  display.println("Plant was watered on: ");
+  display.println(realTime);
 }
 
 void ShowSmiley(){
