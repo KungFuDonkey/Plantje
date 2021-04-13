@@ -110,7 +110,6 @@ unsigned long lastWateredTime = 0;
 //Mode
 bool manual = true;
 unsigned long lastActionTime = 0;
-bool watering = false;
 
 //Menus
 int menu = 0;
