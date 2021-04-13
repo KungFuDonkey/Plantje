@@ -87,24 +87,20 @@ Adafruit_BME280 bme;
 
 //Temperature sensor
 float temp = 0;
-float prevtemp = 0;
 
 //Light sensor
 float light = 0;
-float prevlight = 0;
 
 //Moisture sensor
 float moisture = 0;
-float prevmoisture = 0;
+float minimumMoisture = 300;
 bool moistureRead = false;
 
 //Humidity sensor
 float humidity = 0;
-float prevhumidity = 0;
 
 //Airpressure sensor
 float pressure = 0;
-float prevpressure = 0;
 
 //Watering the plant
 #define WaterTime 3000
@@ -113,7 +109,11 @@ unsigned long lastWateredTime = 0;
 
 //Mode
 bool manual = true;
+<<<<<<< HEAD
 unsigned long lastActionTime = 0;
+=======
+bool watering = false;
+>>>>>>> 5a00a7bd0914fbee52dc66d7012437316284929b
 
 //Menus
 int menu = 0;
@@ -317,10 +317,15 @@ void ReloadVariables(){
 // Online Button
 
 void ButtonAction(String msg){
-  if(msg == "1"){
+  LOG("buttonpressed: ");
+  LOG(msg);
+  LOGLN("!");
+  if (msg == "1")
+  {
     WaterPlant();
   }
-  else if (msg == "2"){
+  else if (msg == "2")
+  {
     ReloadVariables();
   }
 }
@@ -338,7 +343,6 @@ void MQTT_publishTemp(){
   if(publishMessage(TEMPERATURETOPIC,String(temp))){
     LOG("Published Temp: ");
     LOGLN(temp);
-    prevtemp = temp;
   }
 }
 
@@ -355,7 +359,7 @@ void UpdateMoisture(){
 void ReadMoisture(){
   moisture = analogRead(AMUX_PIN);
   digitalWrite(AMUX_SELECT, LOW);
-  if (moisture < 200 && prevmoisture < 200)
+  if (moisture < minimumMoisture)
   {
     plantStatus = 0;
     if (!manual)
@@ -363,7 +367,7 @@ void ReadMoisture(){
       WaterPlant();
     }
   }
-  if (moisture >= 200 && prevmoisture >= 200)
+  if (moisture >= minimumMoisture)
   {
     plantStatus = 1;
   }
@@ -376,7 +380,6 @@ void MQTT_publishMoisture(){
   if(publishMessage(MOISTURETOPIC,String(moisture))){
     LOG("Published Moisture: ");
     LOGLN(moisture);
-    prevmoisture = moisture;
   }
 }
 
@@ -398,7 +401,6 @@ void MQTT_publishLight(){
   if(publishMessage(LIGHTTOPIC,String(light))){
     LOG("Published Light: ");
     LOGLN(light);
-    prevlight = light;
   }
 }
 
@@ -415,7 +417,6 @@ void MQTT_publishHumidity(){
   if(publishMessage(HUMIDITYTOPIC,String(humidity))){
     LOG("Published Humidity: ");
     LOGLN(humidity);
-    prevhumidity = humidity;
   }
 }
 
@@ -432,7 +433,6 @@ void MQTT_publishPressure(){
   if(publishMessage(PRESSURETOPIC,String(pressure))){
     LOG("Published pressure: ");
     LOGLN(pressure);
-    prevpressure = pressure;
   }
 }
 
@@ -487,7 +487,7 @@ void Menu(int menu){
 
 void ShowVariables(){
   display.print("Temp: ");
-  float _temp = floor(temp * 10) / 10;
+  float _temp = (int)floor(temp * 10) / 10;
   display.println(_temp);
   display.print("Light: ");
   float _light = floor(light * 10) / 10;
@@ -537,13 +537,13 @@ void ShowLastWaterTime(){
 
 void ShowSmiley(){
   int x = display.getCursorX();
-  int y = display.getCursorY();
+  int y = display.getCursorY() + 2;
   if (plantStatus == 0)
   {
-    display.drawBitmap(x, y, sad_Pepe, 128, 50, WHITE);
+    display.drawBitmap(x, y, sad_Pepe, 128, 54, WHITE);
     return;
   }
-  display.drawBitmap(x, y, happy_Pepe, 128, 50, WHITE);
+  display.drawBitmap(x, y, happy_Pepe, 128, 54, WHITE);
 }
 
 void ShowWatering(){
