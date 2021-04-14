@@ -5,6 +5,7 @@
 
 #define numToCharArray(x) String(x).c_str()
 #define numToString(x) String(x)
+#define Length(x) String(x).length()
 #ifdef DEBUG
 #define LOG(x) Serial.print(x)
 #define LOGLN(x) Serial.println(x)
@@ -196,9 +197,6 @@ void loop()
   queue.PerformEvents();
   Menu(menu);
   button.read();
-  if(manual && millis() - lastWateredTime > 60000){
-    SwitchMode();
-  }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -216,12 +214,12 @@ void reconnect(){
     LOG("Attempting MQTT connection...");
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
-    if (client.connect(clientId.c_str(),USERNAME,KEY,WILLTOPIC,1,true,"DISCONNECTED")) {
+    if (client.connect(clientId.c_str(),USERNAME,KEY,WILLTOPIC,1,true,encryptor.Encrypt("DISCONNECTED\0",12,WILLTOPIC,Length(WILLTOPIC)))) {
       LOGLN("connected");
-      client.publish(WILLTOPIC,"CONNECTED",true);
+      client.publish(WILLTOPIC,encryptor.Encrypt("CONNECTED\0",9,WILLTOPIC,Length(WILLTOPIC)),true);
       //subsciptions here
-      client.subscribe(BUTTONTOPIC);
-      client.subscribe(GESTURETOPIC);
+      client.subscribe(BUTTONTOPIC,1);
+      client.subscribe(GESTURETOPIC,1);
       client.subscribe(REALTIMETOPIC);
       break;
     } 
@@ -243,7 +241,7 @@ void callback(char* topic, byte* payload, unsigned int length){
   }
   msg[length] = '\0';
   LOGLN();
-  char* message = encryptor.Decrypt(msg,topic,String(topic).length());
+  char* message = encryptor.Decrypt(msg,topic,Length(topic));
   LOGLN(message);
   String check = String(topic);
   if(check.equals(BUTTONTOPIC)){
@@ -253,15 +251,20 @@ void callback(char* topic, byte* payload, unsigned int length){
     GestureAction(message);
   }
   if(check.equals(REALTIMETOPIC)){
-    realTime = String(message);
+    SetRealTime(message);
   }
+}
+
+void SetRealTime(char* message){
+  realTime = String(message);
+  realTime[5] = ' ';
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //Encryption
 
 bool publishMessage(const char *topic, String payload){
-  return client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, String(topic).length()),true);
+  return client.publish(topic,encryptor.Encrypt(payload.c_str(),payload.length(), topic, Length(topic)),true);
 }
 
 
@@ -332,6 +335,9 @@ void ButtonAction(String msg){
   }
   else if (msg == "3"){
     MenuUp();
+  }
+  else if (msg == "4"){
+    SwitchMode();
   }
 }
 
@@ -566,6 +572,8 @@ void WaterPlant(){
 void StopWateringPlant(){
   StopWater();
 }
+
+
 
 void StartWater(){
   int current = servo.read();
